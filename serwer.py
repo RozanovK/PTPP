@@ -1,5 +1,6 @@
 import socket
-from os.path import isfile
+from os.path import isfile, isdir
+import os
 from mimetypes import guess_type
 import re
 import base64
@@ -20,8 +21,9 @@ def to_unicode(s):
     return s
 
 class Socket():
-    def __init__(self, port):
+    def __init__(self, port, directory):
         self.port = port
+        self.directory = directory
 
     def init_conn(self):
         s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -44,26 +46,35 @@ class Socket():
                 print("Error Occured.")
                 break
 
-
-    def get_request_p1(self, request):
+    def get_request(self, request):
         x = re.compile('GET(.*)PTPP/1.0')
         filepath = x.findall(request)
         filepath = str(filepath[0]).strip()
         return filepath
 
     def serve_file(self, request):
-        filepath = self.get_request_p1(request)
-        if not isfile(filepath):
-            return 'File "%s" does not exist' % filepath
-        try:
-            f = open(filepath, 'rb')
-        except IOError as e:
-            return 'File "%s" is not readable' % filepath
-        content = to_unicode(f.read())
-        content_type, _ = guess_type(filepath)
-        return content
+        filename = self.get_request(request)
+        filepath = (self.directory + filename)
+        if isfile(filepath):
+            try:
+                f = open(filepath, 'rb')
+                content = to_unicode(f.read())
+                content_type, _ = guess_type(filepath)
+                return content
+            except IOError as e:
+                return 'File "%s" is not readable' % filepath
+        elif isdir(filepath):
+            files_list = []
+            for path, subdirs, files in os.walk(filepath):
+                for name in files:
+                    files_list.append(name)
+            files_list = " ".join(files_list)
+            files_list = to_ascii(files_list)
+            return files_list
+        else:
+            return (to_ascii('File or directory "%s" does not exist' % filename))
 
 
 if __name__ == "__main__":
-    (Socket(TCP_PORT2)).listen_tcp()
+    (Socket(TCP_PORT1, '../../serwer/')).listen_tcp()
 
