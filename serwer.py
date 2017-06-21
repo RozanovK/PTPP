@@ -5,15 +5,15 @@ from mimetypes import guess_type
 import re
 import base64
 
-TCP_IP = '127.0.0.1'
-TCP_PORT1 = 5005
+TCP_IP = '127.0.0.1' #pętla lokalna
+TCP_PORT1 = 5005 #port pod którym działa serwer
 TCP_PORT2 = 5006
 BUFFER_SIZE = 1024
-SERVER_RESPONSE_HEADER = '<<PTPP END>>'
+SERVER_RESPONSE_HEADER = '<<PTPP END>>'  #końcowy nagłówek zgodnie z założeniami projektowymi
 CONNECTION_LIST = []
 
 
-def to_ascii(s):
+def to_ascii(s):           #kodowanie jest niezbędne do niektórych operacji
     return s.encode('utf-8')
 
 
@@ -25,14 +25,14 @@ class Socket():
         self.port = port
         self.directory = directory
 
-    def init_conn(self):
+    def init_conn(self):      #inicjuje nasłuchiwanie na porcie
         s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         s.bind((TCP_IP, self.port))
         s.listen(10)
         CONNECTION_LIST.append(s)
         return s
 
-    def listen_tcp(self):
+    def listen_tcp(self):    #odbieranie połączenia
         P1 = self.init_conn()
         while 1:
             conn, addr = P1.accept()  # odebranie polaczenia
@@ -46,13 +46,13 @@ class Socket():
                 print("Error Occured.")
                 break
 
-    def get_request(self, request):
+    def get_request(self, request):    #pobieranie nazwy pliku, który trzeba wysłać
         x = re.compile('GET(.*)PTPP/1.0')
         filepath = x.findall(request)
         filepath = str(filepath[0]).strip()
         return filepath
 
-    def serve_file(self, request):
+    def serve_file(self, request):  #serwowanie pliku lub dyrektorii
         filename = self.get_request(request)
         filepath = (self.directory + filename)
         if isfile(filepath):
